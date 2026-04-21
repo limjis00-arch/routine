@@ -41,6 +41,7 @@
     const IconCheck = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>;
     const IconCoffee = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></svg>;
     const IconTrash2 = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
+    const IconEdit = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
     const IconDownload = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
     const IconUpload = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
     const IconFileText = ({className}) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>;
@@ -79,20 +80,15 @@
       if (diffDays < 0) return false;
 
       switch (item.frequency) {
-        case 'daily':
-          return true;
-        case 'weekly':
-          return targetDate.getDay() === startDate.getDay();
-        case 'biweekly':
-          const diffWeeks = Math.floor(diffDays / 7);
-          return targetDate.getDay() === startDate.getDay() && diffWeeks % 2 === 0;
+        case 'daily': return true;
+        case 'weekly': return targetDate.getDay() === startDate.getDay();
+        case 'biweekly': return targetDate.getDay() === startDate.getDay() && Math.floor(diffDays / 7) % 2 === 0;
         case 'monthly':
           if (targetDate.getDate() === startDate.getDate()) return true;
           const lastDayOfTargetMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
           if (startDate.getDate() > lastDayOfTargetMonth && targetDate.getDate() === lastDayOfTargetMonth) return true;
           return false;
-        default:
-          return false;
+        default: return false;
       }
     };
 
@@ -130,23 +126,48 @@
       };
     };
 
+    // 주기를 한글로 변환하는 유틸리티
+    const getFrequencyText = (frequency) => {
+      switch(frequency) {
+        case 'daily': return '매일';
+        case 'weekly': return '매주';
+        case 'biweekly': return '2주';
+        case 'monthly': return '매월';
+        default: return '';
+      }
+    };
+
     // --- 아코디언 컴포넌트 ---
-    const Accordion = ({ title, progress, children, defaultOpen = true }) => {
-      const [isOpen, setIsOpen] = useState(defaultOpen);
+    const Accordion = ({ title, progress, children, isOpen, onToggle, rightElement }) => {
+      const [internalOpen, setInternalOpen] = useState(true);
+      const isExpanded = isOpen !== undefined ? isOpen : internalOpen;
+      
+      const handleToggle = (e) => {
+        if (onToggle) onToggle(e);
+        else setInternalOpen(!internalOpen);
+      };
+
       return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-4">
-          <button 
-            onClick={() => setIsOpen(!isOpen)} 
-            className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+          <div 
+            onClick={handleToggle} 
+            className="w-full flex items-center justify-between p-4 bg-green-50 hover:bg-green-100 transition-colors text-left cursor-pointer select-none border-b border-gray-100"
           >
-            <div className="font-bold text-gray-800">{title}</div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded-lg">{progress}% 달성</span>
-              {isOpen ? <IconChevronUp className="w-5 h-5 text-gray-400"/> : <IconChevronDown className="w-5 h-5 text-gray-400"/>}
+            <div className="font-bold text-green-800 flex items-center gap-2">
+              {title}
+              {rightElement && (
+                <div onClick={(e) => { e.stopPropagation(); }}>
+                  {rightElement}
+                </div>
+              )}
             </div>
-          </button>
-          {isOpen && (
-            <div className="p-4 space-y-2 border-t border-gray-100 bg-white">
+            <div className="flex items-center gap-3">
+              {progress !== undefined && <span className="text-sm font-bold text-green-600 bg-white shadow-sm px-2 py-1 rounded-lg">{progress}% 달성</span>}
+              {isExpanded ? <IconChevronUp className="w-5 h-5 text-green-600"/> : <IconChevronDown className="w-5 h-5 text-green-600"/>}
+            </div>
+          </div>
+          {isExpanded && (
+            <div className="p-2 space-y-1 bg-white">
               {children}
             </div>
           )}
@@ -162,10 +183,12 @@
       const [activeTab, setActiveTab] = useState('today');
       const [categories, setCategories] = useState([]);
       const [history, setHistory] = useState({});
+      const [expandedCats, setExpandedCats] = useState({}); // 카테고리 접기/펴기 상태 유지용
       
       const [selectedDate, setSelectedDate] = useState(todayStr);
       const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-      const [deleteModalTarget, setDeleteModalTarget] = useState(null); // 삭제 모달용 상태
+      const [editingCategoryId, setEditingCategoryId] = useState(null); // 수정 모드 판별
+      const [deleteModalTarget, setDeleteModalTarget] = useState(null);
       
       const [modalCategory, setModalCategory] = useState('');
       const [modalItems, setModalItems] = useState([{ name: '', frequency: 'daily' }]);
@@ -182,6 +205,7 @@
             const parsed = JSON.parse(savedData);
             if (parsed.categories) setCategories(parsed.categories);
             if (parsed.history) setHistory(parsed.history);
+            if (parsed.expandedCats) setExpandedCats(parsed.expandedCats);
           } catch (e) {
             console.error("데이터 로드 실패:", e);
           }
@@ -190,14 +214,13 @@
 
       // 데이터 자동 저장
       useEffect(() => {
-        localStorage.setItem('jisoo_routine_data', JSON.stringify({ categories, history }));
-      }, [categories, history]);
+        localStorage.setItem('jisoo_routine_data', JSON.stringify({ categories, history, expandedCats }));
+      }, [categories, history, expandedCats]);
 
       const toggleRoutineStatus = (itemId, status, dateStr) => {
         setHistory(prev => {
           const newHistory = { ...prev };
           if (!newHistory[dateStr]) newHistory[dateStr] = {};
-          
           if (newHistory[dateStr][itemId] === status) {
             delete newHistory[dateStr][itemId];
           } else {
@@ -219,6 +242,29 @@
         setDeleteModalTarget(null);
       };
 
+      const toggleCategoryAccordion = (catId) => {
+        setExpandedCats(prev => ({
+          ...prev,
+          [catId]: prev[catId] === false ? true : false
+        }));
+      };
+
+      const openAddModal = () => {
+        setEditingCategoryId(null);
+        setModalCategory('');
+        setModalItems([{ name: '', frequency: 'daily' }]);
+        setModalStartDate(selectedDate);
+        setIsAddModalOpen(true);
+      };
+
+      const openEditModal = (cat) => {
+        setEditingCategoryId(cat.id);
+        setModalCategory(cat.name);
+        setModalItems(cat.items.map(item => ({ ...item }))); // 깊은 복사
+        setModalStartDate(todayStr); // 새 항목 추가를 대비해 오늘 날짜 세팅
+        setIsAddModalOpen(true);
+      };
+
       // 1. 첫번째 페이지: 오늘(선택된 날짜) 해야할 루틴
       const renderTodayView = () => {
         const dateCategories = categories.map(cat => ({
@@ -226,7 +272,6 @@
           items: cat.items.filter(item => isScheduledForDate(item, selectedDate))
         })).filter(cat => cat.items.length > 0);
 
-        // 표시할 날짜 텍스트
         let displayDateText = selectedDate;
         if (selectedDate === todayStr) displayDateText = '오늘';
         else if (selectedDate === tomorrowStr) displayDateText = '내일';
@@ -235,7 +280,6 @@
           displayDateText = `${parseInt(m)}월 ${parseInt(d)}일`;
         }
 
-        // 해당 날짜 루틴 달성 검사
         let totalDue = 0; let completed = 0; let rested = 0;
         dateCategories.forEach(cat => {
           cat.items.forEach(item => {
@@ -245,7 +289,8 @@
             if (status === 'rest') rested++;
           });
         });
-        const isAllDone = totalDue > 0 && completed === (totalDue - rested);
+        const activeTotal = totalDue - rested;
+        const isAllDone = activeTotal > 0 && completed === activeTotal;
 
         return (
           <div className="pb-24">
@@ -265,82 +310,103 @@
             {/* 일정 없음 / 전체 루틴 보여주기 처리 */}
             {dateCategories.length === 0 ? (
               <div className="text-center">
-                <div className="py-10 text-gray-500 bg-white rounded-2xl border border-gray-100 mb-6">
-                  <IconCalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <div className="py-10 text-gray-500 bg-white rounded-2xl border border-gray-100 mb-6 shadow-sm">
+                  <IconCalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30 text-green-600" />
                   <p className="font-bold text-gray-700">{displayDateText} 계획된 루틴이 없습니다.</p>
                   <p className="text-sm mt-2 opacity-80">아래는 내가 만든 전체 루틴 목록입니다.</p>
                 </div>
-                {/* 전체 루틴 목록 (비활성화 상태로 보여주기) */}
-                <div className="opacity-70 pointer-events-none">
+                {/* 전체 루틴 목록 */}
+                <div className="opacity-80">
                   {categories.map(cat => (
-                    <div key={cat.id} className="mb-4 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden text-left">
-                      <div className="bg-gray-100 px-4 py-3 font-bold text-gray-600">{cat.name}</div>
-                      <div className="divide-y divide-gray-50">
-                        {cat.items.map(item => (
-                          <div key={item.id} className="p-4 text-sm text-gray-500">{item.name} ({item.frequency})</div>
-                        ))}
-                      </div>
-                    </div>
+                    <Accordion 
+                      key={cat.id} 
+                      title={cat.name} 
+                      isOpen={expandedCats[cat.id] !== false} 
+                      onToggle={() => toggleCategoryAccordion(cat.id)}
+                      rightElement={
+                        <button onClick={() => openEditModal(cat)} className="p-1.5 ml-2 text-green-600 bg-white rounded-lg hover:bg-green-100 transition-colors shadow-sm">
+                          <IconEdit className="w-4 h-4" />
+                        </button>
+                      }
+                    >
+                      {cat.items.map(item => (
+                        <div key={item.id} className="p-3 text-sm text-gray-600 bg-gray-50 rounded-lg mb-1 flex items-center gap-2">
+                           {item.name} <span className="text-xs font-semibold text-green-600 bg-green-100 px-1.5 py-0.5 rounded">({getFrequencyText(item.frequency)})</span>
+                        </div>
+                      ))}
+                    </Accordion>
                   ))}
                 </div>
               </div>
             ) : (
               <div>
-                {/* 루틴을 모두 완료했을 때 메시지와 내일 버튼 */}
+                {/* 루틴 모두 완료 메시지 */}
                 {isAllDone && selectedDate === todayStr && (
-                  <div className="bg-green-100 text-green-800 p-4 rounded-2xl mb-6 text-center border border-green-200">
+                  <div className="bg-green-100 text-green-800 p-4 rounded-2xl mb-6 text-center border border-green-200 shadow-sm animate-pulse">
                     <p className="font-bold text-lg mb-1">🎉 모든 루틴 완료!</p>
                     <p className="text-sm mb-3">오늘 하루도 수고하셨습니다.</p>
                     <button 
                       onClick={() => setSelectedDate(tomorrowStr)}
-                      className="bg-white text-green-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-green-50"
+                      className="bg-white text-green-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-green-50 transition-colors"
                     >
                       내일 루틴 준비하기 ➔
                     </button>
                   </div>
                 )}
 
-                {/* 오늘의 루틴 목록 */}
-                {dateCategories.map(cat => (
-                  <div key={cat.id} className="mb-5 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="bg-green-50 px-4 py-3 border-b border-gray-100">
-                      <h3 className="font-bold text-green-800">{cat.name}</h3>
-                    </div>
-                    <div className="divide-y divide-gray-50">
+                {/* 오늘의 루틴 목록 (아코디언 적용) */}
+                {dateCategories.map(cat => {
+                  let catDue = 0; let catCompleted = 0; let catRested = 0;
+                  cat.items.forEach(item => {
+                    catDue++;
+                    const status = history[selectedDate]?.[item.id];
+                    if (status === 'completed') catCompleted++;
+                    if (status === 'rest') catRested++;
+                  });
+                  const catActive = catDue - catRested;
+                  const catRate = catActive === 0 ? (catDue === 0 ? 0 : 100) : Math.round((catCompleted / catActive) * 100);
+
+                  return (
+                    <Accordion 
+                      key={cat.id} 
+                      title={cat.name} 
+                      progress={catRate}
+                      isOpen={expandedCats[cat.id] !== false}
+                      onToggle={() => toggleCategoryAccordion(cat.id)}
+                      rightElement={
+                        <button onClick={() => openEditModal(cat)} className="p-1.5 ml-2 text-green-600 bg-white rounded-lg hover:bg-green-100 transition-colors shadow-sm">
+                          <IconEdit className="w-4 h-4" />
+                        </button>
+                      }
+                    >
                       {cat.items.map(item => {
                         const status = history[selectedDate]?.[item.id];
                         const isCompleted = status === 'completed';
                         const isRested = status === 'rest';
 
                         return (
-                          <div key={item.id} className="p-4 flex items-center justify-between transition-colors hover:bg-gray-50">
-                            <div className="flex-1" onClick={() => toggleRoutineStatus(item.id, isCompleted ? '' : 'completed', selectedDate)}>
-                              <p className={`font-medium ${isCompleted || isRested ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-                                {item.name}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {item.frequency === 'daily' && '매일'}
-                                {item.frequency === 'weekly' && '매주'}
-                                {item.frequency === 'biweekly' && '2주마다'}
-                                {item.frequency === 'monthly' && '매월'}
+                          <div key={item.id} className="p-3 mb-1 flex items-center justify-between transition-colors hover:bg-gray-50 rounded-xl bg-white border border-gray-50">
+                            <div className="flex-1 cursor-pointer" onClick={() => toggleRoutineStatus(item.id, isCompleted ? '' : 'completed', selectedDate)}>
+                              <p className={`font-medium flex items-center gap-2 ${isCompleted || isRested ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+                                {item.name} <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${isCompleted || isRested ? 'text-gray-400 bg-gray-100' : 'text-green-600 bg-green-100'}`}>({getFrequencyText(item.frequency)})</span>
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 ml-2">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); toggleRoutineStatus(item.id, 'rest', selectedDate); }}
-                                className={`p-2 rounded-full transition-all ${isRested ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400 hover:bg-orange-50 hover:text-orange-500'}`}
+                                className={`p-2.5 rounded-xl transition-all ${isRested ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-400 hover:bg-orange-50 hover:text-orange-500'}`}
                               >
-                                <IconCoffee className="w-5 h-5" />
+                                <IconCoffee className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); toggleRoutineStatus(item.id, 'completed', selectedDate); }}
-                                className={`p-2 rounded-full transition-all ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-green-50 hover:text-green-500'}`}
+                                className={`p-2.5 rounded-xl transition-all ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400 hover:bg-green-50 hover:text-green-500'}`}
                               >
-                                <IconCheck className="w-5 h-5" />
+                                <IconCheck className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={(e) => { e.stopPropagation(); setDeleteModalTarget({ categoryId: cat.id, itemId: item.id }); }}
-                                className="p-2 text-gray-300 hover:text-red-500 transition-colors ml-1"
+                                className="p-2.5 text-gray-300 hover:text-red-500 transition-colors ml-1 bg-gray-50 hover:bg-red-50 rounded-xl"
                               >
                                 <IconTrash2 className="w-4 h-4" />
                               </button>
@@ -348,19 +414,14 @@
                           </div>
                         );
                       })}
-                    </div>
-                  </div>
-                ))}
+                    </Accordion>
+                  );
+                })}
               </div>
             )}
 
             <button 
-              onClick={() => {
-                setModalCategory('');
-                setModalItems([{ name: '', frequency: 'daily' }]);
-                setModalStartDate(selectedDate); // 현재 보고 있는 날짜를 기본 시작일로
-                setIsAddModalOpen(true);
-              }}
+              onClick={openAddModal}
               className="fixed bottom-20 right-6 w-14 h-14 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 active:scale-95 z-30"
             >
               <IconPlus className="w-6 h-6" />
@@ -369,14 +430,13 @@
         );
       };
 
-      // 2. 두번째 페이지: 오늘의 달성률 (아코디언 적용)
+      // 2. 두번째 페이지: 오늘의 달성률
       const renderProgressView = () => {
         let totalDue = 0; let completed = 0; let rested = 0;
         const catStats = {};
 
         categories.forEach(cat => {
           let catDue = 0; let catCompleted = 0; let catRested = 0;
-          
           cat.items.forEach(item => {
             if (isScheduledForDate(item, todayStr)) {
               catDue++; totalDue++;
@@ -385,7 +445,6 @@
               if (status === 'rest') { catRested++; rested++; }
             }
           });
-          
           if (catDue > 0) {
             const active = catDue - catRested;
             const rate = active === 0 ? 0 : Math.round((catCompleted / active) * 100);
@@ -440,18 +499,24 @@
               {Object.values(catStats).length === 0 && <p className="text-gray-400 text-center py-4">오늘 계획된 루틴이 없습니다.</p>}
               
               {Object.values(catStats).map(cat => (
-                <Accordion key={cat.id} title={cat.name} progress={cat.rate} defaultOpen={true}>
+                <Accordion 
+                  key={cat.id} 
+                  title={cat.name} 
+                  progress={cat.rate} 
+                  isOpen={expandedCats[cat.id] !== false} 
+                  onToggle={() => toggleCategoryAccordion(cat.id)}
+                >
                   {cat.items.filter(item => isScheduledForDate(item, todayStr)).map(item => {
                     const status = history[todayStr]?.[item.id];
                     return (
-                      <div key={item.id} className="flex justify-between items-center p-2 rounded-lg">
+                      <div key={item.id} className="flex justify-between items-center p-3 mb-1 bg-gray-50 rounded-xl border border-gray-100">
                         <span className="text-sm font-medium text-gray-700">{item.name}</span>
                         {status === 'completed' ? (
-                          <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded-md">완료</span>
+                          <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1.5 rounded-md shadow-sm">완료</span>
                         ) : status === 'rest' ? (
-                          <span className="text-xs font-bold text-orange-700 bg-orange-100 px-2 py-1 rounded-md">휴식</span>
+                          <span className="text-xs font-bold text-orange-700 bg-orange-100 px-2 py-1.5 rounded-md shadow-sm">휴식</span>
                         ) : (
-                          <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md">미완료</span>
+                          <span className="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1.5 rounded-md shadow-sm">미완료</span>
                         )}
                       </div>
                     );
@@ -463,15 +528,15 @@
         );
       };
 
-      // 3. 세번째 페이지: 이번주/이달 통계 및 루틴 모아보기 (아코디언 적용)
+      // 3. 세번째 페이지: 이번주/이달 통계 및 루틴 모아보기
       const renderOverviewView = () => {
         const getRangeStats = (startStr, endStr) => {
           const dates = getDatesInRange(startStr, endStr);
           let totalDue = 0; let totalCompleted = 0; let totalRested = 0;
-          const groupedStats = {}; // 카테고리별로 묶기
+          const groupedStats = {};
 
           categories.forEach(cat => {
-            groupedStats[cat.id] = { name: cat.name, expected: 0, completed: 0, rested: 0, items: [] };
+            groupedStats[cat.id] = { id: cat.id, name: cat.name, expected: 0, completed: 0, rested: 0, items: [] };
           });
 
           dates.forEach(dateStr => {
@@ -489,59 +554,49 @@
                   totalDue++;
 
                   const status = history[dateStr]?.[item.id];
-                  if (status === 'completed') {
-                    itemStat.completed++;
-                    groupedStats[cat.id].completed++;
-                    totalCompleted++;
-                  } else if (status === 'rest') {
-                    itemStat.rested++;
-                    groupedStats[cat.id].rested++;
-                    totalRested++;
-                  }
+                  if (status === 'completed') { itemStat.completed++; groupedStats[cat.id].completed++; totalCompleted++; }
+                  else if (status === 'rest') { itemStat.rested++; groupedStats[cat.id].rested++; totalRested++; }
                 }
               });
             });
           });
 
           const activeTotal = totalDue - totalRested;
-          const rate = activeTotal === 0 ? (totalDue === 0 ? 0 : 100) : Math.round((totalCompleted / activeTotal) * 100);
-
+          const rate = activeTotal === 0 ? 0 : Math.round((totalCompleted / activeTotal) * 100);
           return { rate, activeTotal, totalCompleted, totalRested, groupedStats };
         };
 
         const weekRange = getWeekRange();
         const monthRange = getMonthRange();
         const stats = overviewTab === 'week' ? getRangeStats(weekRange.start, weekRange.end) : getRangeStats(monthRange.start, monthRange.end);
-        
-        // 데이터가 존재하는 카테고리만 필터링
         const validCategories = Object.values(stats.groupedStats).filter(cat => cat.expected > 0);
 
         return (
           <div className="pb-24">
             <h2 className="text-2xl font-bold text-gray-800 mb-6">달성률 모아보기</h2>
             
-            <div className="flex bg-gray-200 p-1 rounded-xl mb-6">
+            <div className="flex bg-gray-200 p-1 rounded-xl mb-6 shadow-inner">
               <button 
                 onClick={() => setOverviewTab('week')}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${overviewTab === 'week' ? 'bg-white text-green-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors ${overviewTab === 'week' ? 'bg-white text-green-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 이번 주
               </button>
               <button 
                 onClick={() => setOverviewTab('month')}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${overviewTab === 'month' ? 'bg-white text-green-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-colors ${overviewTab === 'month' ? 'bg-white text-green-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 이번 달
               </button>
             </div>
 
             <div className="bg-white rounded-2xl p-6 mb-6 text-center border border-gray-100 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-green-500"></div>
               <h3 className="text-lg font-bold text-gray-800 mb-2">
                 {overviewTab === 'week' ? '주간 종합 달성률' : '월간 종합 달성률'}
               </h3>
               <div className="text-4xl font-black text-green-600 mb-4">{stats.rate}%</div>
-              <div className="flex justify-center gap-4 text-sm bg-gray-50 p-3 rounded-xl inline-flex mx-auto">
+              <div className="flex justify-center gap-4 text-sm bg-gray-50 p-3 rounded-xl inline-flex mx-auto border border-gray-100">
                 <span className="text-gray-600">대상: <b>{stats.activeTotal}</b></span>
                 <span className="text-gray-600">완료: <b className="text-green-600">{stats.totalCompleted}</b></span>
                 <span className="text-gray-600">휴식: <b className="text-orange-500">{stats.totalRested}</b></span>
@@ -560,16 +615,22 @@
                   const catRate = catActive === 0 ? 0 : Math.round((cat.completed / catActive) * 100);
                   
                   return (
-                    <Accordion key={idx} title={cat.name} progress={catRate} defaultOpen={false}>
+                    <Accordion 
+                      key={idx} 
+                      title={cat.name} 
+                      progress={catRate} 
+                      isOpen={expandedCats[cat.id] !== false} 
+                      onToggle={() => toggleCategoryAccordion(cat.id)}
+                    >
                       {cat.items.map((item, iIdx) => {
                         const itemActive = item.expected - item.rested;
                         const itemRate = itemActive === 0 ? 0 : Math.round((item.completed / itemActive) * 100);
                         
                         return (
-                          <div key={iIdx} className="flex justify-between items-center p-2 border-b border-gray-50 last:border-0">
+                          <div key={iIdx} className="flex justify-between items-center p-3 mb-1 bg-gray-50 rounded-xl border border-gray-100">
                             <span className="text-sm font-medium text-gray-700">{item.name}</span>
                             <div className="text-right flex items-center gap-3">
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-500 font-medium">
                                   {item.completed}/{itemActive} 완료 {item.rested > 0 && <span className="text-orange-400">(휴식{item.rested})</span>}
                                 </span>
                                 <span className="text-sm font-bold text-green-600 w-10 text-right">{itemRate}%</span>
@@ -589,7 +650,7 @@
       // 4. 네번째 페이지: 설정
       const renderSettingsView = () => {
         const handleExportJSON = () => {
-          const dataStr = JSON.stringify({ categories, history });
+          const dataStr = JSON.stringify({ categories, history, expandedCats });
           const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
           const exportFileDefaultName = `jisoo_routine_backup_${todayStr}.json`;
           const linkElement = document.createElement('a');
@@ -608,6 +669,7 @@
               if (parsed.categories && parsed.history) {
                 setCategories(parsed.categories);
                 setHistory(parsed.history);
+                if(parsed.expandedCats) setExpandedCats(parsed.expandedCats);
                 alert("데이터가 성공적으로 복원되었습니다!");
               } else {
                 alert("유효하지 않은 백업 파일입니다.");
@@ -634,10 +696,7 @@
                   <IconDownload className="w-5 h-5 text-green-500" /> 데이터 백업
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">휴대폰을 바꿔도 기록을 유지할 수 있도록 데이터를 파일로 저장합니다.</p>
-                <button 
-                  onClick={handleExportJSON}
-                  className="w-full py-3 bg-green-50 text-green-600 font-medium rounded-xl hover:bg-green-100 transition-colors"
-                >
+                <button onClick={handleExportJSON} className="w-full py-3 bg-green-50 text-green-600 font-medium rounded-xl hover:bg-green-100 transition-colors">
                   백업 파일 다운로드 (.json)
                 </button>
               </div>
@@ -661,31 +720,13 @@
                 <div className="flex flex-col gap-3">
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
                     <label className="block text-sm font-medium text-gray-700 mb-2">주간 리포트 시작 날짜 선택</label>
-                    <input 
-                      type="date"
-                      value={customWeekStart}
-                      onChange={(e) => setCustomWeekStart(e.target.value)}
-                      className="w-full p-2 mb-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-white"
-                    />
-                    <button 
-                      onClick={() => handlePDFPrint('weekly')}
-                      className="w-full py-2 bg-red-100 text-red-600 font-medium rounded-lg hover:bg-red-200 transition-colors"
-                    >
+                    <input type="date" value={customWeekStart} onChange={(e) => setCustomWeekStart(e.target.value)} className="w-full p-2 mb-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none bg-white"/>
+                    <button onClick={() => handlePDFPrint('weekly')} className="w-full py-2 bg-red-100 text-red-600 font-medium rounded-lg hover:bg-red-200 transition-colors">
                       지정 주간(7일) 통계 리포트
                     </button>
                   </div>
-                  <button 
-                    onClick={() => handlePDFPrint('monthly')}
-                    className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-colors"
-                  >
-                    월간 통계 리포트 (이번 달)
-                  </button>
-                  <button 
-                    onClick={() => handlePDFPrint('yearly')}
-                    className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-colors"
-                  >
-                    연간 통계 리포트 (올해)
-                  </button>
+                  <button onClick={() => handlePDFPrint('monthly')} className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-colors">월간 통계 리포트 (이번 달)</button>
+                  <button onClick={() => handlePDFPrint('yearly')} className="w-full py-3 bg-red-50 text-red-600 font-medium rounded-xl hover:bg-red-100 transition-colors">연간 통계 리포트 (올해)</button>
                 </div>
               </div>
             </div>
@@ -748,7 +789,7 @@
                   <h3 className="font-bold bg-gray-100 p-2">{cat.name}</h3>
                   <ul className="list-disc pl-6 mt-2">
                     {cat.items.map(item => (
-                      <li key={item.id}>{item.name} ({item.frequency})</li>
+                      <li key={item.id}>{item.name} ({getFrequencyText(item.frequency)})</li>
                     ))}
                   </ul>
                 </div>
@@ -764,11 +805,11 @@
 
           <header className="bg-white shadow-sm sticky top-0 z-10 no-print">
             <div className="max-w-md mx-auto px-6 py-4 flex items-center justify-between">
-              <h1 className="text-xl font-extrabold text-green-600 tracking-tight" onClick={() => setSelectedDate(todayStr)}>지수의 루틴 ✨</h1>
+              <h1 className="text-xl font-extrabold text-green-600 tracking-tight cursor-pointer" onClick={() => setSelectedDate(todayStr)}>지수의 루틴 ✨</h1>
             </div>
           </header>
 
-          <main className="max-w-md mx-auto p-6 min-h-[calc(100vh-140px)] no-print relative">
+          <main className="max-w-md mx-auto p-4 sm:p-6 min-h-[calc(100vh-140px)] no-print relative">
             {activeTab === 'today' && renderTodayView()}
             {activeTab === 'progress' && renderProgressView()}
             {activeTab === 'overview' && renderOverviewView()}
@@ -784,19 +825,22 @@
                 <p className="text-sm text-gray-500 mb-6">삭제된 루틴은 복구할 수 없습니다.</p>
                 <div className="flex gap-3">
                   <button onClick={() => setDeleteModalTarget(null)} className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200">취소</button>
-                  <button onClick={executeDelete} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600">삭제하기</button>
+                  <button onClick={executeDelete} className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 shadow-md">삭제하기</button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* 루틴 추가/수정 모달 */}
           {isAddModalOpen && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 no-print">
               <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl transform transition-all max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-800">새로운 루틴 만들기</h3>
-                  <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                    <IconX className="w-6 h-6" />
+                  <h3 className="text-xl font-bold text-gray-800">
+                    {editingCategoryId ? '루틴 수정하기' : '새로운 루틴 만들기'}
+                  </h3>
+                  <button onClick={() => setIsAddModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1">
+                    <IconX className="w-5 h-5" />
                   </button>
                 </div>
                 
@@ -807,32 +851,46 @@
                   const validItems = modalItems.filter(item => item.name.trim() !== '');
                   if (validItems.length === 0) return alert("최소 1개의 세부 루틴 내용을 입력해주세요.");
 
-                  const newRoutineItems = validItems.map((item, idx) => ({
-                    id: 'r_' + Date.now() + '_' + idx,
-                    name: item.name.trim(),
-                    frequency: item.frequency,
-                    startDate: modalStartDate
-                  }));
+                  if (editingCategoryId) {
+                    setCategories(prev => prev.map(c => {
+                      if (c.id === editingCategoryId) {
+                        return {
+                          ...c,
+                          name: modalCategory.trim(),
+                          items: validItems.map((item, idx) => ({
+                            id: item.id || ('r_' + Date.now() + '_' + idx),
+                            name: item.name.trim(),
+                            frequency: item.frequency,
+                            startDate: item.startDate || modalStartDate
+                          }))
+                        };
+                      }
+                      return c;
+                    }));
+                  } else {
+                    const newRoutineItems = validItems.map((item, idx) => ({
+                      id: 'r_' + Date.now() + '_' + idx,
+                      name: item.name.trim(),
+                      frequency: item.frequency,
+                      startDate: modalStartDate
+                    }));
 
-                  setCategories(prev => {
-                    const existingCat = prev.find(c => c.name === modalCategory.trim());
-                    if (existingCat) {
-                      return prev.map(c => c.name === modalCategory.trim() ? { ...c, items: [...c.items, ...newRoutineItems] } : c);
-                    } else {
-                      return [...prev, { id: 'c_' + Date.now(), name: modalCategory.trim(), items: newRoutineItems }];
-                    }
-                  });
-                  
+                    setCategories(prev => {
+                      const existingCat = prev.find(c => c.name === modalCategory.trim());
+                      if (existingCat) return prev.map(c => c.name === modalCategory.trim() ? { ...c, items: [...c.items, ...newRoutineItems] } : c);
+                      else return [...prev, { id: 'c_' + Date.now(), name: modalCategory.trim(), items: newRoutineItems }];
+                    });
+                  }
                   setIsAddModalOpen(false);
                 }}>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">루틴 제목 (카테고리)</label>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">루틴 제목 (카테고리)</label>
                       <input 
                         value={modalCategory} 
                         onChange={(e) => setModalCategory(e.target.value)}
                         placeholder="예: 아침 루틴, 운동, 독서" 
-                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" 
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 focus:bg-white" 
                         required 
                         list="cat-list"
                       />
@@ -841,29 +899,27 @@
                       </datalist>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">시작 날짜</label>
-                      <input 
-                        type="date"
-                        value={modalStartDate}
-                        onChange={(e) => setModalStartDate(e.target.value)}
-                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none bg-white"
-                        required
-                      />
-                    </div>
+                    {!editingCategoryId && (
+                      <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">시작 날짜</label>
+                        <input 
+                          type="date"
+                          value={modalStartDate}
+                          onChange={(e) => setModalStartDate(e.target.value)}
+                          className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 focus:bg-white"
+                          required
+                        />
+                      </div>
+                    )}
 
-                    <div className="pt-2 border-t border-gray-100">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">세부 루틴 항목</label>
+                    <div className="pt-4 border-t border-gray-100">
+                      <label className="block text-sm font-bold text-gray-700 mb-3">세부 루틴 항목</label>
                       <div className="space-y-3">
                         {modalItems.map((item, index) => (
-                          <div key={index} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl relative border border-gray-100">
+                          <div key={index} className="flex flex-col gap-2 p-3 bg-gray-50 rounded-xl relative border border-gray-200">
                             {modalItems.length > 1 && (
-                              <button 
-                                type="button" 
-                                onClick={() => setModalItems(modalItems.filter((_, i) => i !== index))}
-                                className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500"
-                              >
-                                <IconX className="w-4 h-4" />
+                              <button type="button" onClick={() => setModalItems(modalItems.filter((_, i) => i !== index))} className="absolute top-2 right-2 p-1 text-gray-400 hover:text-red-500 bg-white rounded-full shadow-sm">
+                                <IconX className="w-3 h-3" />
                               </button>
                             )}
                             <input 
@@ -874,7 +930,7 @@
                                 setModalItems(newItems);
                               }}
                               placeholder="예: 물 한잔 마시기" 
-                              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm pr-8" 
+                              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm pr-8" 
                               required 
                             />
                             <select 
@@ -884,28 +940,24 @@
                                 newItems[index].frequency = e.target.value;
                                 setModalItems(newItems);
                               }}
-                              className="w-full p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white text-sm"
+                              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none bg-white text-sm"
                             >
                               <option value="daily">매일</option>
-                              <option value="weekly">매주 (시작일 요일 기준)</option>
-                              <option value="biweekly">2주마다 (시작일 요일 기준)</option>
-                              <option value="monthly">한달 (시작일 날짜 기준)</option>
+                              <option value="weekly">매주</option>
+                              <option value="biweekly">2주마다</option>
+                              <option value="monthly">한달</option>
                             </select>
                           </div>
                         ))}
                       </div>
                       
-                      <button 
-                        type="button" 
-                        onClick={() => setModalItems([...modalItems, { name: '', frequency: 'daily' }])}
-                        className="mt-3 w-full py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-1"
-                      >
+                      <button type="button" onClick={() => setModalItems([...modalItems, { name: '', frequency: 'daily' }])} className="mt-3 w-full py-2.5 bg-green-50 text-green-700 text-sm font-bold rounded-xl hover:bg-green-100 transition-colors flex items-center justify-center gap-1">
                         <IconPlus className="w-4 h-4" /> 세부 항목 추가하기
                       </button>
                     </div>
                   </div>
-                  <button type="submit" className="w-full mt-6 py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition-colors">
-                    루틴 저장하기
+                  <button type="submit" className="w-full mt-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md transition-colors text-lg">
+                    {editingCategoryId ? '루틴 수정 완료' : '루틴 저장하기'}
                   </button>
                 </form>
               </div>
@@ -914,33 +966,21 @@
 
           <nav className="fixed bottom-0 w-full bg-white border-t border-gray-100 pb-safe z-40 no-print">
             <div className="max-w-md mx-auto flex justify-around p-2">
-              <button 
-                onClick={() => { setActiveTab('today'); setSelectedDate(todayStr); }}
-                className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'today' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
+              <button onClick={() => { setActiveTab('today'); setSelectedDate(todayStr); }} className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'today' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}>
                 <IconHome className={`w-6 h-6 mb-1 ${activeTab === 'today' ? 'fill-current' : ''}`} />
-                <span className="text-[10px] font-medium">홈</span>
+                <span className="text-[10px] font-bold">홈</span>
               </button>
-              <button 
-                onClick={() => setActiveTab('progress')}
-                className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'progress' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
+              <button onClick={() => setActiveTab('progress')} className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'progress' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}>
                 <IconPieChart className={`w-6 h-6 mb-1 ${activeTab === 'progress' ? 'fill-current' : ''}`} />
-                <span className="text-[10px] font-medium">달성률</span>
+                <span className="text-[10px] font-bold">달성률</span>
               </button>
-              <button 
-                onClick={() => setActiveTab('overview')}
-                className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'overview' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
+              <button onClick={() => setActiveTab('overview')} className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'overview' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}>
                 <IconCalendarDays className={`w-6 h-6 mb-1 ${activeTab === 'overview' ? 'fill-current' : ''}`} />
-                <span className="text-[10px] font-medium">모아보기</span>
+                <span className="text-[10px] font-bold">모아보기</span>
               </button>
-              <button 
-                onClick={() => setActiveTab('settings')}
-                className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'settings' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
+              <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center p-2 min-w-[64px] ${activeTab === 'settings' ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'}`}>
                 <IconSettings className={`w-6 h-6 mb-1 ${activeTab === 'settings' ? 'fill-current' : ''}`} />
-                <span className="text-[10px] font-medium">설정</span>
+                <span className="text-[10px] font-bold">설정</span>
               </button>
             </div>
           </nav>
